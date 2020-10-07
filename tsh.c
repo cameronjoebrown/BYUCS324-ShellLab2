@@ -167,6 +167,22 @@ int main(int argc, char **argv)
 */
 void eval(char *cmdline) 
 {
+    char *arguments[100];
+    int bg = parseline(cmdline, arguments);
+    pid_t pid;
+    pid_t pgid;
+    if(arguments[0] == NULL) {
+       return;
+    }
+    if(builtin_cmd(arguments)) {
+       return;
+    }
+    int cmds[100];
+    int stdin_redir[100];
+    int stdout_redir[100];
+    int num_cmds = parseargs(arguments, cmds, stdin_redir, stdout_redir);
+    int p[2];
+    int lastRead;
     return;
 }
 
