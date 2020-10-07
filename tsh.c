@@ -167,22 +167,99 @@ int main(int argc, char **argv)
 */
 void eval(char *cmdline) 
 {
+    // Parse the command line into the arguments array
     char *arguments[100];
     int bg = parseline(cmdline, arguments);
-    pid_t pid;
-    pid_t pgid;
+
     if(arguments[0] == NULL) {
        return;
     }
+
+    // Check if the first argument is a built in command, and run it if it is
     if(builtin_cmd(arguments)) {
        return;
     }
+
     int cmds[100];
     int stdin_redir[100];
     int stdout_redir[100];
     int num_cmds = parseargs(arguments, cmds, stdin_redir, stdout_redir);
+
+    pid_t pid;
+    pid_t pgid;
     int p[2];
     int lastRead;
+
+    // Loop through each of the commands
+    for(int i = 0; i < num_cmds; i++) {
+       if(i < num_cmds - 1) {
+         if(pipe(p) == -1) {
+             fprintf(stderr,"Pipe Failed");
+             return;
+          }
+       }
+
+
+       pid = fork();
+
+       if(pid == 0) { // If process is a child
+          if(i == 0) {
+             close(p[0]);
+             dup2(p[1],1);
+          }
+          else if(i < num_cmds - 1) {
+             close(p[0]);
+             dup2(p[1], 1);
+             dup2(lastRead, 0);
+          }
+          else {
+             dup2(lastRead, 0);
+          }
+
+          if(stdin_redir[i] >= 0) {
+             FILE* in = fopen(arguments[stdin_redir[i]], "r");
+         dup2(fileno(in), 0);
+          }
+          if(stdout_redir[i] >= 0) {
+             FILE* out = fopen(arguments[stdout_redir[i]], "w");
+             dup2(fileno(out), 1);
+          }
+
+          if(execve(arguments[cmds[i]], &arguments[cmds[i]], NULL) < 0) {
+             printf("%s: Command not found\n", arguments[cmds[i]]);
+             return;
+          }
+       }
+       else {  // If process is a parent
+
+           if(i == 0) { // If it is the first iteration
+               pgid = pid; // Save the first child's pid to be the group id for later
+               close(p[1]);
+               lastRead = p[0];
+           }
+           else if(i < num_cmds - 1) {
+             close(p[1]);
+             close(lastRead);
+             lastRead = p[0];
+           }
+           else {
+              close(lastRead);
+           }
+           setpgid(pid, pgid);
+       }
+       if(!bg) {
+         int status;
+         if(waitpid(-1, &status, 0) < 0) {
+            unix_error("waitfg: waitpid error");
+         }
+       }
+       else {
+         printf("%d %s", pid, cmdline);
+       }
+    }
+    return;
+
+
     return;
 }
 
