@@ -255,7 +255,7 @@ void eval(char *cmdline)
          }
        }
        else {
-         printf("[%d] (%d) %s\n", job->jid, pid, cmdline);
+         printf("%d %s", pid, cmdline);
        }
 
     }
