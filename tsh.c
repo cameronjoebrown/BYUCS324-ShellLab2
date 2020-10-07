@@ -233,7 +233,7 @@ void eval(char *cmdline)
        else {  // If process is a parent
 
            if(i == 0) { // If it is the first iteration
-               pgid = pid; // Save the first child's pid to be the group id for later
+               pgid = pid; // Save the first child's pid as the group id
                close(p[1]);
                lastRead = p[0];
            }
@@ -247,6 +247,7 @@ void eval(char *cmdline)
            }
            setpgid(pid, pgid);
        }
+       addjob(jobs, pid, pgid, bg, cmdline);
        if(!bg) {
          int status;
          if(waitpid(-1, &status, 0) < 0) {
@@ -256,6 +257,7 @@ void eval(char *cmdline)
        else {
          printf("%d %s", pid, cmdline);
        }
+
     }
     return;
 
