@@ -259,8 +259,11 @@ void eval(char *cmdline)
        }
 
     }
-    return;
+    // TODO: Add a SINGLE job?
+    addjob(jobs, pid, pgid, bg, cmdline);
 
+    // TODO: Pass it the id of the last command in the pipeline
+    waitfg(pid);
 
     return;
 }
@@ -416,6 +419,10 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
+    while(fgpid(jobs) == pid) {
+        sleep(1);
+    }
+
     return;
 }
 
