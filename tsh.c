@@ -260,7 +260,7 @@ void eval(char *cmdline)
 
     }
     // TODO: Add a SINGLE job?
-    addjob(jobs, pid, pgid, bg, cmdline);
+    addjob(job, pid, pgid, bg, cmdline);
 
     // TODO: Pass it the id of the last command in the pipeline
     waitfg(pid);
