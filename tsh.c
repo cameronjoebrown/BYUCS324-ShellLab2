@@ -262,7 +262,7 @@ void eval(char *cmdline)
     // TODO: Add a SINGLE job?
     addjob(jobs, pid, pgid, bg, cmdline);
 
-    // TODO: Pass it the id of the last command in the pipeline
+    // TODO: Pass it the pid of the last command in the pipeline
     waitfg(pid);
 
     return;
@@ -439,6 +439,23 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig) 
 {
+    int status = -1;
+    int child_pid = 0;
+
+    while ((child_pid = waitpid(-1, &status, WUNTRACED | WNOHANG)) > 0) {
+        if (WIFEXITED(status)) {
+            deletejob(jobs, child_pid);
+    	}
+    	else if (WIFSIGNALED(status)) {
+    	    printf("Job [%d] (%d) terminated by signal %d\n",pid2jid(child_pid), child_pid, SIGINT);
+    		deletejob(jobs, child_pid);
+    	}
+    	else if (WIFSTOPPED(status)) {
+    	    printf("Job [%d] (%d) stopped by signal %d\n",pid2jid(child_pid), child_pid, SIGTSTP);
+    		struct job_t* to_stop = getjobpid(jobs, child_pid);
+    		to_stop->state = ST;
+    	}
+    }
     return;
 }
 
